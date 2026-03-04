@@ -143,3 +143,10 @@ function throttle(fn, wait, options = { leading: true, trailing: true }) {
     return throttled;
 }
 ```
+
+::: tip 考察点
+1. 高阶函数（Higher-Order Function）：接收一个函数作为参数，或者返回一个函数的函数。体现了函数式编程思想，增强了代码的复用性和可组合性。
+2. 异步控制（Asynchronous Control）:setTimeout 将函数放入宏任务队列，不会阻塞主线程。
+3. 内存清理（Memory Cleanup）:及时清除不再需要的定时器，并释放对变量的引用，防止内存泄漏。
+4. this指向，延时器中的this如果是箭头函数则不需要特殊处理，如果是普通函数则需要在外层及时保存
+:::
