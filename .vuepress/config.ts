@@ -26,9 +26,9 @@ export default defineUserConfig({
     logo: "/logo.png",
     author: "weishan",
     authorAvatar: "/head.png",
-    docsRepo: "https://github.com/weishell/vuepress2",
+    docsRepo: "https://github.com/weishell/blog",
     docsBranch: "main",
-    docsDir: "example",
+    docsDir: "blogs",
     lastUpdatedText: "最后更新",
     // series 为原 sidebar
     series: {
