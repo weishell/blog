@@ -28,7 +28,7 @@ export default defineUserConfig({
     authorAvatar: "/head.png",
     docsRepo: "https://github.com/weishell/blog",
     docsBranch: "main",
-    docsDir: "blogs",
+    docsDir: "",
     lastUpdatedText: "最后更新",
     // series 为原 sidebar
     series: {
