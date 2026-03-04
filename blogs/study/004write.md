@@ -1,9 +1,8 @@
 ---
 title: WRITE
 date: 2026/03/03
-tags:JS
- - 
+tags:
+ - JS
 categories:
  - JS
 ---
-
