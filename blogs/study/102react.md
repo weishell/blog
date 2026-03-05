@@ -146,7 +146,7 @@ componentDidCatch(error, info)
 卸载时清理|	componentWillUnmount|	useEffect |返回的清理函数
 更新时执行	|componentDidUpdate	|useEffect(fn, [deps]) |依赖变化时执行；或使用 useRef 记录首次挂载标志
 每次渲染后执行|	render 之后	useEffect(fn) |无依赖数组|（每次渲染后执行）
-获取更新前的| DOM 信息|	getSnapshotBeforeUpdate	|useLayoutEffect + useRef 组合
+获取更新前的DOM 信息|	getSnapshotBeforeUpdate	|useLayoutEffect + useRef 组合|-
 跳过渲染|	shouldComponentUpdate|	React.memo |对 props 浅比较，或 useMemo/useCallback 优化子组件
 
 
