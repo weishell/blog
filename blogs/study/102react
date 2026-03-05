@@ -6,3 +6,32 @@ tags:
 categories:
  - FRAME
 ---
+
+## 为什么 React 的 useState 返回数组，而 Vue 的 Composition API 返回对象
+
+1. React 的 useState 返回数组：追求命名自由与简单
+
+```js
+// 使用方式：
+const [count, setCount] = useState(0);
+```
+设计原因：
+
++ 命名灵活性：数组解构允许开发者在调用时自由命名状态变量和更新函数，无需像对象那样使用固定的属性名（如 state 和 setState），代码更简洁。
++ 位置确定：useState 返回值固定为两个元素，数组顺序天然表达了“第一个是当前值，第二个是更新函数”的约定。数组解构正好利用位置关系，符合 React Hooks 追求“简单直观”的理念。
++ 底层无关性：React 的状态是不可变快照，每次渲染都有独立的 props 和 state，解构过程与响应式连接无关，因此非常安全。
+
+2. Vue 的 Composition API 返回对象：响应式系统要求
+
+```js
+const count = ref(0);               // 返回 { value: 0 }
+const state = reactive({ name: 'Vue' }); // 返回 Proxy 对象
+const { data, error } = useFetch(); // 自定义组合式函数通常返回对象
+```
+
+设计原因：
+
++ 保持响应式连接：Vue 的响应式数据是通过 ref 或 reactive 创建的“代理对象”。如果直接对 reactive 对象进行 ES6 解构，会切断响应式连接，导致变量失去响应性。因此 Vue 提供了 toRefs 工具来安全地解构，而 ref 本身就返回一个包含 value 属性的对象，解构后仍需通过 .value 访问，时刻提醒开发者这是一个响应式引用。
++ 心智模型一致：返回对象可以让开发者清晰地知道“这是一个包含多个属性的响应式实体”，并且通过属性名访问更符合直觉。Vue 鼓励显式的响应式追踪，而不是依赖调用顺序。
+
+总结：React 选择数组是为了命名自由，Vue 选择对象是为了与响应式系统无缝协作，保持响应式连接的完整性。
