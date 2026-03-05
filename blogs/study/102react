@@ -80,3 +80,73 @@ const { values, handleChange, reset } = useForm({ name: '', email: '' });
 涉及多个独立但有逻辑关联的属性（如 data、loading、error）适合返回对象。
 
 一些流行库如 react-use 中，useToggle 返回数组 [on, toggle]，而 useAsync 返回对象 { loading, error, value }。
+
+## React 生命周期详解
+
+React 组件的生命周期指的是组件从创建、渲染、更新到卸载的整个过程。
+
+1. 挂载阶段（Mounting）:组件被创建并插入 DOM 中。
+
+```
+constructor(props)
+组件初始化时调用，用于设置初始 state 和绑定方法。必须调用 super(props)。
+
+static getDerivedStateFromProps(props, state)（新增）
+在 render 之前调用，用于根据 props 更新 state。返回一个对象来更新 state，或返回 null 表示不更新。这是一个静态方法，无法访问组件实例。
+
+render()
+必须实现的方法，返回 JSX 描述 UI。应该是纯函数，不修改 state。
+
+componentDidMount()
+组件挂载后（已插入 DOM）立即调用。适合进行网络请求、添加订阅、操作 DOM 等副作用。
+```
+
+2. 更新阶段（Updating）组件的 props 或 state 发生变化时触发。
+
+```
+static getDerivedStateFromProps(props, state)
+在每次渲染前调用，同样用于根据 props 更新 state。
+
+shouldComponentUpdate(nextProps, nextState)
+决定是否重新渲染。默认返回 true。可用于性能优化（如浅比较 props/state 是否变化）。如果返回 false，后续生命周期不会执行。
+
+render()
+重新渲染 UI。
+
+getSnapshotBeforeUpdate(prevProps, prevState)（新增）
+在最近一次渲染输出（提交到 DOM 之前）调用。它返回一个值，作为 componentDidUpdate 的第三个参数。常用于捕获 DOM 信息（如滚动位置）。
+
+componentDidUpdate(prevProps, prevState, snapshot)
+组件更新后立即调用。适合操作更新后的 DOM，或根据 props 变化发起网络请求（需注意条件判断避免死循环）。
+```
+
+3. 卸载阶段（Unmounting）:组件从 DOM 中移除。
+
+```
+componentWillUnmount()
+组件卸载前调用。适合清除定时器、取消网络请求、移除订阅等清理工作。
+```
+
+4. 错误处理（Error Handling）:当子组件在渲染、生命周期或构造函数中抛出错误时调用。
+
+```
+static getDerivedStateFromError(error)
+用于在子组件抛出错误后更新 state，展示降级 UI。在渲染阶段调用，不允许执行副作用。
+
+componentDidCatch(error, info)
+用于记录错误信息，可以执行副作用（如将错误发送到监控服务）。
+```
+
+### 函数组件模拟生命周期
+
+
+生命周期阶段	|类组件方法	|函数组件| Hook 实现
+-|-|-|-
+挂载时执行一次	|componentDidMount	|useEffect(fn, []) |空依赖数组
+卸载时清理|	componentWillUnmount|	useEffect |返回的清理函数
+更新时执行	|componentDidUpdate	|useEffect(fn, [deps]) |依赖变化时执行；或使用 useRef 记录首次挂载标志
+每次渲染后执行|	render 之后	useEffect(fn) |无依赖数组|（每次渲染后执行）
+获取更新前的| DOM 信息|	getSnapshotBeforeUpdate	|useLayoutEffect + useRef 组合
+跳过渲染|	shouldComponentUpdate|	React.memo |对 props 浅比较，或 useMemo/useCallback 优化子组件
+
+
