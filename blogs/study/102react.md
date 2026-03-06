@@ -149,4 +149,15 @@ componentDidCatch(error, info)
 获取更新前的DOM 信息|	getSnapshotBeforeUpdate	|useLayoutEffect + useRef 组合|-
 跳过渲染|	shouldComponentUpdate|	React.memo |对 props 浅比较，或 useMemo/useCallback 优化子组件
 
+## 描述一下 react render的全流程
+React 的 render 全流程是从「状态 / 属性变化」到「页面最终更新」的完整链路，核心分为 调度（Scheduler）、协调（Reconciliation）、渲染（Commit） 三大阶段
+
+::: tip render触发场景
+1. 组件自身：setState/useState 更新状态、useReducer 派发 action；
+2. 父组件：父组件重新 render（即使子组件 props 没变化，默认子组件也会跟着 render）；
+3. 强制触发：forceUpdate（类组件）、ReactDOM.flushSync（同步更新）；
+4. 上下文：组件消费的 Context.Provider 值变化；
+5. 其他：useState/useReducer 的更新函数依赖变化（如 useState(() => xxx) 仅初始化执行，不算）。
+:::
+
 
