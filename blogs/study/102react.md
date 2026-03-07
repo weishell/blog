@@ -170,6 +170,56 @@ React 的 render 全流程是从「状态 / 属性变化」到「页面最终更
   - 低优：滚动 / 窗口 resize、懒加载 → 低优先级（可被打断）。
 + 调度逻辑：
   - 触发更新后，React 不会立即开始计算，而是先交给 Scheduler；
-  - Scheduler 基于「requestIdleCallback + 时间切片（Time Slicing）」，在浏览器空闲时执行更新计算；
+  - Scheduler 基于「requestIdleCallback + 时间切片（Time Slicing）」自己实现 MessageChannel 或 setTimeout 进行时间切片，模拟浏览器空闲时段，从而支持高优任务打断低优任务。，在浏览器空闲时执行更新计算；
   - 若有更高优先级任务进来（比如用户突然点击按钮），当前低优任务会被暂停，等高优任务执行完再恢复。
+ 
+2. 阶段 2：协调阶段（Reconciliation）—— 计算「要更新什么」（核心：虚拟 DOM 对比 / Fiber 树）
+
+这是 React 最核心的阶段，也叫「Reconcile 阶段」或「渲染阶段」（注意：此阶段不操作真实 DOM，纯内存计算）。
+
++ 核心概念：Fiber 架构React 16 后用「Fiber 树」替代了旧的「虚拟 DOM 树」，Fiber 是一个对象，包含：
+  - 组件信息（类型、props、state）；
+  - DOM 节点信息（对应的真实 DOM）；
+  - 副作用标记（比如「需要插入 DOM」「需要删除 DOM」「需要更新属性」）；
+  - 链表指针（父 / 子 / 兄弟 Fiber，方便中断 / 恢复计算）。
++ 协调流程（Fiber 树对比）：
+  - 「当前 Fiber 树」：对应页面已渲染的 DOM 结构（旧树）；
+  - 「工作 Fiber 树」：基于新状态 / Props 构建的临时树（新树）；
++ React 从根组件开始，深度优先遍历，逐个对比新旧 Fiber 节点：
+  - ✅ 节点类型相同（如都是 <div>/ 都是自定义组件 <MyComp>）：复用节点，仅更新 props/state，标记「更新属性」副作用；
+  - ✅ 节点类型不同：标记「删除旧节点 + 插入新节点」副作用，不再对比子节点（直接销毁旧子树）；
+  - ✅ 列表节点（如 map 生成的节点）：通过 key 对比，避免错位更新（这也是为什么列表必须加 key）。
+对比过程中，若有更高优先级任务进来，React 会暂停对比，等优先级高的任务执行完再继续（并发渲染的核心）。
++ 关键优化：Diff 算法React 的 Diff 是「同层对比」（不跨层级对比，比如不会把 <div><span/></div> 和 <span><div/></span> 对比），时间复杂度从 O (n³) 降到 O (n)，核心规则：
+  - 同层节点：按类型 /key 对比；
+  - 列表节点：key 是唯一标识，无 key 会导致全量更新（性能差）；
+  - 组件节点：若 props 没变化（且没依赖 Context），可通过 React.memo/PureComponent 跳过对比（避免无用的协调）。
+
+3. 阶段 3：渲染阶段（Commit）—— 执行「真正的更新」（操作 DOM + 执行副作用）
+
+协调阶段完成后，React 会把「副作用标记」一次性批量执行，这个阶段不可中断（保证 DOM 更新的原子性），分 3 个子步骤：
++ 子步骤 1：Before Mutations（DOM 更新前）
+  - 执行 getSnapshotBeforeUpdate（类组件）；
+  - 读取 DOM 状态（如滚动位置），为后续恢复做准备；
+  - 触发 useLayoutEffect 的清理函数（上一轮的）。
++ 子步骤 2：Mutations（DOM 更新）
+  - 执行协调阶段标记的 DOM 操作：插入 / 删除 / 更新真实 DOM 节点；
+  - 这一步是「真正修改 DOM」的环节，执行完后 DOM 就更新了，但浏览器还没绘制（paint）。
++ 子步骤 3：Layout（DOM 更新后，浏览器绘制前）
+  - 执行 useLayoutEffect 的回调函数（同步执行，阻塞浏览器绘制）；
+  - 更新类组件的 refs、执行 componentDidUpdate（类组件）；
+  - 计算 DOM 布局（如元素的宽高、位置），可同步获取最新 DOM 状态。
++ 子步骤 4：Commit 完成后（异步）
+  - 执行 useEffect 的清理函数（上一轮的） + 回调函数（异步执行，不阻塞浏览器绘制）；
+  - 触发 useInsertionEffect（CSS-in-JS 框架用，比 useLayoutEffect 更早）；
+  - 更新 React 内部的状态快照（如 useRef 的值、state 的最新值）。
+
+### 为什么 useEffect 是异步的，useLayoutEffect 是同步的？
+useLayoutEffect：在 DOM 更新后、浏览器绘制前执行，同步阻塞绘制，适合「修改 DOM 样式、读取 DOM 布局」（比如调整滚动位置）；
+useEffect：在浏览器绘制后异步执行，不阻塞页面渲染，适合「网络请求、订阅 / 取消订阅」等不依赖 DOM 布局的操作。
+###  为什么父组件 render，子组件默认也会 render？
+协调阶段中，父组件 Fiber 节点对比后标记「需要更新」，React 会递归对比所有子节点（即使子组件 props 没变化）。解决方法：
+函数组件：用 React.memo 包裹子组件（浅对比 props）；
+类组件：继承 PureComponent（浅对比 state/props）或重写 shouldComponentUpdate；
+配合 useMemo/useCallback 缓存 props（避免父组件每次传新的函数 / 对象，导致 React.memo 失效）。
 
