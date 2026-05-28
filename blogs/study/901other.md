@@ -13,3 +13,4 @@ categories:
 ws关不掉|作为子页面嵌入，iframe一直没被销毁|-|因为为了优化启动速度，做了个iframe壳子一直用活，但是因此子页面无法销毁，ws一直挂着的，通过network中对应ws的time状态一直是挂起(pending)确定问题
 https中嵌入http页面无反馈|HTTPS 页面要求所有资源也必须是安全的（HTTPS 或 wss），否则攻击者可以篡改 HTTP 内容，从而劫持你的 HTTPS 页面。iframe 属于主动混合内容（可以执行脚本、修改 DOM），风险极高，所以浏览器一律拦截。|把 iframe 的源升级为 HTTPS|谷歌可能看不到报错，edge控制台可能有这个报错：`Mixed Content: The page at 'https://example.com/' was loaded over HTTPS,but requested an insecure frame 'http://other.com/'. This request has beenblocked; the content must be served over HTTPS.`
 url打不开链接|有#等特殊字符|需要转义|是局部转义，不去转链接中路由部分的斜杠等信息，而且是因为链接中后续接了?xxx=xxx等参数的情况下需要，如果没有这个场景，可能也不需要这样处理的
+redux精准订阅后原本的功能异常|原先正常是因为redux订阅不精准导致了组件重渲染规避了这个问题|根据对应需求触发组件|-
