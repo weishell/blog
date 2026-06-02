@@ -562,4 +562,197 @@ pnpm 通过 **Content Addressable Store + 硬链接 + 软链接** 实现高效�
 
 这也是 pnpm 相比 npm 和 Yarn Classic 的核心优势。
 
+其实：
 
+```
+inode123
+├── store/lodash/index.js
+└── .pnpm/lodash/index.js
+```
+
+这个图容易让人误解。
+
+很多人会以为：inode123是一个文件
+
+实际上完全不是。
+
+inode 是什么？
+
+在 Linux 文件系统里：
+
+```
+文件名
+↓
+inode
+↓
+数据块(data block)
+```
+
+关系是：
+
+```
+index.js
+    ↓
+ inode123
+    ↓
+磁盘上的真实数据
+```
+
+inode 本身只保存：
+
++ 文件大小
++ 权限
++ 创建时间
++ 数据块地址
+
+等等元数据。
+
+inode 不保存文件名。
+
+真实文件在哪？
+
+例如：
+
+```
+echo hello > a.txt
+```
+
+文件系统可能变成：
+
+```
+a.txt
+ ↓
+inode123
+ ↓
+磁盘块456
+内容: hello
+```
+
+真正的数据：hello存在：磁盘块456
+
+而不是 inode 里。
+
+硬链接发生了什么？
+
+执行：
+
+```
+ln a.txt b.txt
+```
+
+之后：
+
+```
+a.txt
+ ↓
+
+      inode123
+      ↓
+      block456
+      hello
+
+ ↑
+
+b.txt
+```
+
+变成：
+
+```
+a.txt ─┐
+       ├─ inode123 ─ block456
+b.txt ─┘
+```
+
+注意：
+
++ inode123 只有一个
++ block456 只有一个
+
+新增的只有：文件名 b.txt
+
+所以例子应该这样理解不是：
+
+```
+inode123
+├── store/lodash/index.js
+└── .pnpm/lodash/index.js
+```
+
+而是：
+
+```
+store/lodash/index.js
+          │
+          ▼
+
+      inode123
+          │
+          ▼
+
+      文件内容
+
+          ▲
+          │
+
+.pnpm/lodash/index.js
+```
+
+或者画得更准确一点：
+
+```
+store/lodash/index.js
+           │
+           ▼
+
+        inode123
+
+           │
+           ▼
+
+      console.log()
+
+           ▲
+           │
+
+.pnpm/lodash/index.js
+```
+删除一个硬链接会怎样？
+
+例如：
+
+```
+rm store/lodash/index.js
+```
+
+变成：
+
+```
+.pnpm/lodash/index.js
+      │
+      ▼
+   inode123
+      │
+      ▼
+    文件内容
+```
+
+文件仍然存在。
+
+因为 inode 的引用计数：link count = 1还没归零。
+
+继续删除：rm .pnpm/lodash/index.js
+
+此时：link count = 0
+
+系统才会：释放 inode释放数据块,文件真正消失。
+
+
+## pnpm包的删除
+假如ABC三个项目都用到包KK，下奶是哪个项目都删了。
+
+包“KK”从全局存储中被物理删除，必须满足一个核心条件：系统中不再有任何项目依赖它。pnpm store prune 命令就像一个全局的“大扫除”，它会删除所有“没人用”的包。
+
+而这个清理动作不会自动发生，需要你手动或通过脚本去执行它。常见的清理方式有：
+1. 运行 pnpm store prune：这是最安全的方式，它会按照“标记-清除”的逻辑，精确地删除所有未被引用的包。
+2. 手动删除全局存储目录：如果直接暴力删除 ~/.pnpm-store 这个文件夹，会一次性删掉所有包，但这样可能导致其他项目依赖缺失，需要重新下载，非常不推荐。
