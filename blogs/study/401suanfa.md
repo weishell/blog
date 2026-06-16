@@ -6,3 +6,66 @@ tags:
 categories:
  - 算法
 ---
+
+## 1. 判断一个单词是否回文
+
+回文是指把相同的词汇或句子，在上下文中调换位置或颠倒过来，产生首尾回环的情趣，叫做回文，也叫回环。比如 `redivider`。
+
+#### 方法一：使用 reverse()
+O(n) + O(m) + O(n) = O(2n + m) ≈ O(n)（常数系数和低阶项忽略）
+
+```js
+function checkPalindrom(str) {
+	return str == str.split('').reverse().join('');
+}
+```
+
+##### 改进版本（去除空格和大小写敏感）
+
+```js
+// 去掉代码中空格
+function checkPalindrom(str) {
+  str = str.replace(/\W/g, '').toLowerCase();
+  return (str == str.split('').reverse().join(''));
+}
+```
+
+#### 方法二：手动反转字符串
+
+思路：将单词换成字符串A，从后往前循环字符串A，将循环出来的字符拼接成新的字符串B，比较字符串A和B，得出结论。
+
+> 从计算机科学理论（大 O 记法）严格来讲，这是 O(n²)（因为 += 被视为重分配拷贝）,但是现代浏览器的V8引擎实现优化了接近 O(n)
+
+```js
+function isPalindrome(x) {
+	let str = x + '';
+	let newStr = '';
+	for(let i = str.length - 1; i >= 0; i --) {
+		newStr += str[i]
+	}
+	return newStr === str;
+}
+```
+
+#### 方法三：中心对称比较
+
+以中间数为节点，判断左右两边首尾是否相等。
+
+> 中心对称比较（双指针）—— 时间 O(n)，空间 O(1)
+
+```js
+/**
+ * 以中间数为节点，判断左右两边首尾是否相等
+ * @param {number} x
+ * @return {boolean}
+ */
+function isPalindrome(x) {
+  x = '' + x
+  for(let i = 0 ; i < x.length/2; i++) {
+    if (x[i] !== x[x.length - i - 1]) {
+      return false
+    }
+  }
+  return true
+}
+```
