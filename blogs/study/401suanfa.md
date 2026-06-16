@@ -69,3 +69,83 @@ function isPalindrome(x) {
   return true
 }
 ```
+
+## 2. 去掉一组整型数组的重复值
+
+<!-- 比如 -->
+输入：
+[1,2,3,12,1,14,3]
+
+输出：
+[1,2,3,12,14]
+
+#### 方法1：哈希表（对象键值对）
+
+时间复杂度：O(n)（只需遍历原数组一遍）
+
+空间复杂度：O(n)（哈希表 + 新数组）
+```js
+let unique = function(arr) {
+	let hashTable = {};
+	let data = [];
+	for(let i = 0 ; i < arr.length; i ++) {
+		if(!hashTable[arr[i]]) {
+			hashTable[arr[i]] = true;
+			data.push(arr[i]);
+		}
+	}
+	return data;
+}
+module.exports = unique;
+```
+
+#### 方法二：
+
+时间复杂度：O(n)（插入 Set 为 O(1) 均摊，展开为 O(n)）
+
+空间复杂度：O(n)（Set 占一份内存 + 新数组占一份内存，常数系数稍大）
+```js
+function unique (arr) {
+  return Array.from(new Set(arr))
+}
+
+或简写为：
+[...new Set(arr)] 
+
+```
+
+#### 方法3
+性能极差：双重循环 + 数组元素的物理移动。
+```js
+function unique(arr){            
+        for(var i=0; i<arr.length; i++){
+            for(var j=i+1; j<arr.length; j++){
+                if(arr[i]==arr[j]){         //第一个等同于第二个，splice方法删除第二个
+                    arr.splice(j,1);
+                    j--;
+                }
+            }
+        }
+return arr;
+}
+```
+
+#### 方法4：
+时间复杂度：O(n²)（外层 n 次，内层 indexOf 扫描新数组，平均长度 n/2）
+
+空间复杂度：O(n)（新数组存放结果）
+```js
+function unique(arr) {
+    if (!Array.isArray(arr)) {
+        console.log('type error!')
+        return
+    }
+    var array = [];
+    for (var i = 0; i < arr.length; i++) {
+        if (array.indexOf(arr[i]) === -1) {
+            array.push(arr[i])
+        }
+    }
+    return array;
+}
+```
