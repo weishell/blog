@@ -15,3 +15,53 @@ https中嵌入http页面无反馈|HTTPS 页面要求所有资源也必须是安�
 url打不开链接|有#等特殊字符|需要转义|是局部转义，不去转链接中路由部分的斜杠等信息，而且是因为链接中后续接了?xxx=xxx等参数的情况下需要，如果没有这个场景，可能也不需要这样处理的
 redux精准订阅后原本的功能异常|原先正常是因为redux订阅不精准导致了组件重渲染规避了这个问题|根据对应需求触发组件|-
 pnpm管理依赖的项目突然跑不起来|pnpm版本升级了，不兼容node当前的版本|或者固定pnpm版本，或者调整node版本试试|pnpm发了最新版，不兼容项目的node版本造成的
+页面因为样式有点卡顿|因为项目使用了@emotion/css、@emotion/react把css动态用js加载|换成less等方案即可|参见下方
+
+
+Emotion 本质是：
+```js
+css`
+  color:red;
+`
+```
+运行后变成：
+```html
+<div class="css-1a2b3c">
+```
+同时插入：
+```
+<style>
+.css-1a2b3c {
+  color:red;
+}
+</style>
+```
+也就是说：会发生
+```
+JS执行
+ ↓
+解析模板字符串
+ ↓
+生成hash
+ ↓
+插入style标签
+ ↓
+浏览器重新计算样式
+```
+而 Less：
+```css
+.toolbar-btn {
+  color:red;
+}
+```
+
+打包时就已经变成：
+```
+.toolbar-btn_xxx {
+  color:red;
+}
+```
+运行时：没有运行时计算。
+```html
+<div class="toolbar-btn_xxx">
+```
