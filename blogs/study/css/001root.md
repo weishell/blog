@@ -1,6 +1,6 @@
 ---
-title: CSS
-date: 2026/06/29
+title: :root
+date: 2026/06/30
 tags:
  - CSS
 categories:
