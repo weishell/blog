@@ -1,1 +1,549 @@
+---
+title: CSS
+date: 2026/06/29
+tags:
+ - CSS
+categories:
+ - CSS
+---
+
+## CSS3 :root 有什么作用？为什么大型项目都喜欢使用它？
+
+`:root` 是 CSS 中的根元素选择器，在 HTML 文档中等同于 `html` 元素。
+
+它最大的作用并不是为了给 `html` 设置样式，而是**定义全局 CSS 变量（CSS Custom Properties）**，方便整个项目统一管理颜色、字号、间距等设计 Token，提高代码的可维护性和可扩展性。
+
+例如：
+
+```css
+:root {
+  --primary-color: #1677ff;
+  --font-size-base: 16px;
+  --border-radius: 6px;
+}
+
+body {
+  color: var(--primary-color);
+  font-size: var(--font-size-base);
+}
+```
+
+相比直接写固定值，CSS 变量能够让整个项目的主题、颜色、字体等保持一致，修改时也更加方便。
+
+#### 为什么使用 :root，而不是 html？
+
+虽然 `:root` 和 `html` 在 HTML 页面中都表示根元素，但二者仍然有区别：
+
+- `:root` 是伪类选择器。
+- `html` 是元素选择器。
+- `:root` 的优先级高于 `html`。
+- `:root` 不仅适用于 HTML，在 SVG、XML 等文档中同样表示根节点，因此通用性更好。
+
+例如：
+
+```css
+html {
+  --color: blue;
+}
+
+:root {
+  --color: red;
+}
+
+div {
+  color: var(--color);
+}
+```
+
+最终颜色是 **red**，因为 `:root` 的优先级更高。
+
+因此，Vue、React、Angular 等现代项目通常都推荐使用 `:root` 定义全局 CSS 变量。
+
+### CSS 变量有哪些优势？
+
+##### 全局统一管理
+
+统一维护项目中的设计 Token。
+
+例如：
+
+```css
+:root {
+  --color-primary: #1677ff;
+  --color-success: #52c41a;
+  --color-danger: #ff4d4f;
+
+  --spacing-small: 8px;
+  --spacing-medium: 16px;
+  --spacing-large: 24px;
+}
+```
+
+整个项目修改主题时，只需要修改变量即可。
+
+---
+
+##### 提高可维护性
+
+相比：
+
+```css
+.button {
+  color: #1677ff;
+}
+```
+
+更推荐：
+
+```css
+.button {
+  color: var(--color-primary);
+}
+```
+
+变量名表达的是业务语义，而不是具体颜色，提高了代码可读性。
+
+---
+
+##### 支持局部覆盖（作用域）
+
+CSS 变量具有作用域，可以局部覆盖全局变量。
+
+```css
+:root {
+  --color: blue;
+}
+
+.card {
+  --color: red;
+}
+
+.title {
+  color: var(--color);
+}
+```
+
+如果 `.title` 位于 `.card` 内部，则显示红色，否则显示蓝色。
+
+CSS Variables 遵循普通 CSS 的层叠（Cascade）和继承（Inheritance）规则。
+
+---
+
+##### 实现主题切换
+
+这是 CSS Variables 最经典的应用。
+
+```css
+:root {
+  --bg-color: white;
+  --text-color: black;
+}
+
+.dark {
+  --bg-color: #222;
+  --text-color: white;
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+```
+
+JavaScript：
+
+```js
+document.body.classList.toggle("dark");
+```
+
+只需要修改变量值，整个页面即可同步切换主题。
+
+---
+
+##### 响应式设计
+
+CSS Variables 可以结合媒体查询。
+
+```css
+:root {
+  --font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --font-size: 14px;
+  }
+}
+
+body {
+  font-size: var(--font-size);
+}
+```
+
+无需修改业务组件即可完成响应式调整。
+
+---
+
+##### JavaScript 动态修改
+
+CSS Variables 可以直接通过 JavaScript 修改。
+
+```js
+document.documentElement.style.setProperty(
+  "--primary-color",
+  "#ff4d4f"
+);
+```
+
+适用于：
+
+- 深浅色主题
+- 品牌换肤
+- 在线设计器
+- 用户自定义颜色
+
+### var() 的回退机制（Fallback）
+
+很多人认为变量未定义会导致页面出错，其实不会。
+
+CSS 提供了回退值：
+
+```css
+color: var(--primary-color, red);
+```
+
+如果：
+
+```css
+:root {}
+```
+
+没有定义：
+
+```css
+--primary-color
+```
+
+那么最终颜色就是：
+
+```css
+color: red;
+```
+
+甚至可以继续嵌套：
+
+```css
+color: var(--primary-color, var(--secondary-color, blue));
+```
+
+因此，即使变量不存在，也不会导致页面崩溃。
+
+#### CSS Variables 的无效值机制（Invalid at Computed Value Time）
+
+CSS Variables 最大的特点是**不会校验变量本身是否合法**，而是在真正使用变量时才校验。
+
+例如：
+
+```css
+:root {
+  --color: 12px;
+}
+
+div {
+  color: var(--color);
+}
+```
+
+浏览器最终得到：
+
+```css
+color: 12px;
+```
+
+这是一个非法值。
+
+浏览器不会报错，而是认为当前声明无效，然后按照 CSS 层叠规则重新计算最终值（可能继承父元素，也可能恢复到属性默认值）。
+
+这也是 CSS Variables 与 Sass/Less 最大的区别之一，它属于**运行时变量**。
+
+#### CSS 变量的作用域与依赖链
+
+CSS Variables 支持变量之间互相引用。
+
+例如：
+
+```css
+:root {
+  --theme-color: #1677ff;
+  --primary-color: var(--theme-color);
+  --button-color: var(--primary-color);
+}
+```
+
+最终：
+
+```
+--button-color
+      ↓
+--primary-color
+      ↓
+--theme-color
+      ↓
+    #1677ff
+```
+
+如果修改：
+
+```css
+--theme-color
+```
+
+依赖它的变量都会自动更新。
+
+这种设计广泛应用于 Design Token 系统（如 Ant Design、Material Design）。
+
+#### CSS Variables 支持循环引用吗？
+
+支持引用，但不支持循环引用。
+
+例如：
+
+```css
+:root {
+  --a: var(--b);
+  --b: var(--a);
+}
+```
+
+浏览器会检测到循环依赖（Circular Reference），两个变量都会失效，而不会造成死循环。
+
+#### CSS Variables 能用于 url() 吗？
+
+这是一个非常容易踩坑的问题。
+
+错误写法：
+
+```css
+:root {
+  --img: "logo.png";
+}
+
+.box {
+  background-image: var(--img);
+}
+```
+
+最终得到的是：
+
+```css
+background-image: "logo.png";
+```
+
+这不是合法的图片，因此不会生效。
+
+很多人会想到：
+
+```css
+background-image: url(var(--img));
+```
+
+实际上也**不推荐**。
+
+原因是：
+
+- `url()` 在 CSS 解析（Tokenize）阶段就已经完成解析。
+- `var()` 是在计算值阶段（Computed Value Time）才替换。
+
+两者解析时机不同，因此不能把 `var()` 当字符串拼接 URL。
+
+推荐写法：
+
+```css
+:root {
+  --bg-image: url("/images/logo.png");
+}
+
+.box {
+  background-image: var(--bg-image);
+}
+```
+
+如果图片路径需要频繁动态切换，通常建议使用 JavaScript 设置内联样式，而不是 CSS Variables。
+
+### CSS Variables 的性能如何？
+
+正常使用几乎没有性能问题。
+
+当修改：
+
+```js
+document.documentElement.style.setProperty(
+  "--primary-color",
+  "#1677ff"
+);
+```
+
+浏览器不会重新解析整个 CSS，也不会重新计算整个 DOM。
+
+浏览器会通过 **Style Invalidation（样式失效分析）** 找到受影响的元素，仅重新计算这些元素的样式（Recalculate Style）。
+
+例如：
+
+```
+修改变量
+      ↓
+Style Invalidation
+      ↓
+Recalculate Style
+      ↓
+是否影响布局？
+      ↓
+    是         否
+     ↓          ↓
+ Layout      Paint
+     ↓          ↓
+ Composite   Composite
+```
+
+因此：
+
+- 修改颜色、背景、阴影等变量，一般只会触发 **Paint（重绘）**。
+- 修改 `width`、`height`、`margin`、`padding` 等影响布局的变量，则可能触发 **Layout（回流）**，性能开销更大。
+
+因此：
+
+- 推荐使用 CSS Variables 管理颜色、字号、主题等配置。
+- 尽量不要高频（如动画每帧）修改影响布局的变量。
+
+#### 浏览器兼容性
+
+CSS Variables 已经得到现代浏览器全面支持。
+
+| 浏览器 | 支持情况 |
+| ------- | -------- |
+| Chrome | ✅ 49+ |
+| Edge | ✅ 全部新版 |
+| Firefox | ✅ 31+ |
+| Safari | ✅ 9.1+ |
+| Opera | ✅ 支持 |
+| Android | ✅ 支持 |
+| iOS Safari | ✅ 支持 |
+| IE11 | ❌ 不支持 |
+
+如果需要兼容 IE11，可以：
+
+- 使用 Sass/Less 变量。
+- 使用 PostCSS 插件降级。
+- 提供固定值兜底。
+
+例如：
+
+```css
+color: #1677ff;
+color: var(--primary-color);
+```
+
+旧浏览器会使用第一行，新浏览器会使用第二行。
+
+#### CSS Variables 与 Sass/Less 有什么区别？
+
+| 对比项 | CSS Variables | Sass/Less |
+| ------- | ------------- | --------- |
+| 生效时间 | 浏览器运行时 | 编译时 |
+| JS 修改 | ✅ 支持 | ❌ 不支持 |
+| 支持主题切换 | ✅ | ❌ |
+| 支持响应式 | ✅ | ❌ |
+| 是否参与继承 | ✅ | ❌ |
+| 是否存在浏览器 | ✅ | ❌ |
+
+现代项目通常两者结合使用：
+
+- Sass/Less 管理静态变量。
+- CSS Variables 管理运行时主题、颜色、字号等动态配置。
+
+#### 最佳实践
+
+大型项目一般会将所有设计 Token 放在 `:root` 中统一维护。
+
+```css
+:root {
+  --color-primary: #1677ff;
+  --color-success: #52c41a;
+  --color-danger: #ff4d4f;
+
+  --font-size-base: 14px;
+  --border-radius: 6px;
+
+  --spacing-small: 8px;
+  --spacing-medium: 16px;
+  --spacing-large: 24px;
+}
+```
+
+业务组件统一通过 `var()` 获取变量，而不要直接写固定值。
+
+这样既方便维护，也方便主题切换和品牌换肤。
+
+### 面试高频追问
+
+**1、`:root` 和 `html` 有什么区别？**
+
+答：两者都表示根节点，但 `:root` 是伪类，优先级高于 `html`，并且适用于 HTML、SVG、XML 等文档，因此推荐使用 `:root` 定义全局变量。
+
+
+
+**2、CSS Variables 和 Sass/Less 有什么区别？**
+
+答：Sass/Less 是编译时变量；CSS Variables 是运行时变量，可以继承、覆盖，并能通过 JavaScript 动态修改，因此更适合主题切换。
+
+
+
+**3、变量未定义会导致页面报错吗？**
+
+答：不会，可以使用：
+
+```css
+var(--primary-color, red)
+```
+
+指定回退值。如果变量值非法，则浏览器会按照 CSS 层叠规则重新计算最终值，而不会导致页面崩溃。
+
+```
+如果写了回退值：
+
+color: var(--primary-color, red);
+
+当 --primary-color 未定义（或变量自身无效，如循环引用）时，会使用 red。
+
+如果没有提供回退值：
+
+color: var(--primary-color);
+
+那么该声明会在计算值阶段（Computed Value Time）失效，浏览器不会报错，而是丢弃当前声明，并按照 CSS 的层叠（Cascade）规则重新计算最终值（可能继承父元素，也可能使用属性的初始值）。
+
+需要注意：fallback **并不会处理变量值类型错误。**例如：
+
+:root {
+  --primary-color: 12px;
+}
+
+.box {
+  color: var(--primary-color, red);
+}
+```
+
+由于变量存在，不会使用 red。展开后得到 color: 12px;，该声明因类型非法而失效，最终仍会按照 CSS 层叠规则重新计算，而不是使用 fallback。
+
+
+
+**4、为什么 CSS Variables 特别适合主题切换？**
+
+答：因为只需要修改少量变量值，所有引用这些变量的样式都会同步更新，无需遍历 DOM 修改样式，维护成本和性能都更优。
+
+
+
+**5、修改 CSS Variables 一定只会触发重绘吗？**
+
+答：不一定。如果变量只影响颜色等绘制属性，通常只触发 Paint；如果变量影响宽高、边距等布局属性，则还会触发 Layout（回流），性能开销更高。
+
 
