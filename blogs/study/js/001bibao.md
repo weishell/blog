@@ -1,0 +1,153 @@
+---
+title: 闭包
+date: 2026/07/02
+tags:
+ - JS
+categories:
+ - JS
+---
+
+## 描述一下闭包
+
+闭包（Closure）是指一个函数能够记住并访问其`词法作用域`（即定义时的作用域）的变量，即使这个函数在其作用域之外执行。简单来说，闭包 = `函数 + 该函数声明时所处的外部环境的引用`。
+
+在 JavaScript 中，闭包通常通过在一个函数内部定义另一个函数，并将这个内部函数返回或传递给其他地方，从而让内部函数“记住”外部函数的变量。
+
+### 形成闭包的条件
+1. 函数嵌套：存在外部函数和内部函数。
+2. 内部函数引用外部函数的变量：内部函数使用了外部函数中声明的变量。
+3. 外部函数将内部函数作为返回值返回（或者通过其他方式使内部函数在外部被调用），从而延长了变量的生命周期。
+
+#### 闭包优点
+1. 数据私有化:闭包可以创建私有变量，避免全局命名冲突，同时提供对数据的受控访问。例如，只能通过特定的方法修改变量，而不能直接访问。
+2. 延长变量生命周期:闭包中的变量不会被垃圾回收机制回收，可以在多次调用中保持状态，适用于计数器、防抖节流、函数柯里化等场景。
+3. 模块化编程:利用闭包可以封装模块，只暴露公共接口，隐藏内部实现细节，有助于代码组织。
+
+#### 闭包缺点
+1. 内存占用:闭包会一直持有外部函数的变量，导致这些变量无法被垃圾回收。如果滥用闭包，可能造成内存泄漏，尤其是在大型应用中。
+2. 性能损耗:闭包涉及作用域链的查找，访问闭包中的变量比访问局部变量要慢一些。不过在现代引擎中，这种影响通常可以忽略，但大量闭包仍可能影响性能。
+3. 可能导致意外的共享:在循环中创建闭包时，如果不正确处理，可能会共享同一个变量的最终值，导致不符合预期的结果（经典面试题）。
+
+### 闭包应用场景
+1. 封装私有变量（模块模式），事件监听中保持上下文
+
+```js
+//私有变量 —— 模拟类的私有属性
+function Person(name) {
+  let _name = name; // 私有变量
+  return {
+    getName() {
+      return _name;
+    },
+    setName(newName) {
+      _name = newName;
+    }
+  };
+}
+
+const p = Person('Alice');
+console.log(p.getName()); // Alice
+p.setName('Bob');
+console.log(p.getName()); // Bob
+console.log(p._name); // undefined，无法直接访问私有变量
+```
+
+2. 防抖节流和函数柯里化与偏函数
+   
+```js
+// 柯里化加法
+function add(x) {
+  return function(y) {
+    return x + y;
+  };
+}
+
+const add5 = add(5);
+console.log(add5(3)); // 8
+console.log(add5(10)); // 15
+
+// 偏函数：固定部分参数
+function fetchData(url, method, data) {
+  // 模拟请求
+  console.log(`请求 ${url}，方法 ${method}，数据：`, data);
+}
+
+const getJSON = fetchData.bind(null, '/api', 'GET'); // 用 bind 实现偏函数
+getJSON({ id: 1 }); // 请求 /api，方法 GET，数据：{id:1}
+```
+
+3. 循环中保存异步操作的上下文:在循环中使用 var 或异步任务时，闭包可以“捕获”每次迭代的变量值，避免共享问题。
+
+```js
+// 经典问题：点击按钮输出对应索引
+for (var i = 0; i < 5; i++) {
+  (function(index) {
+    document.getElementById(`btn${index}`).onclick = function() {
+      console.log(`按钮 ${index} 被点击`);
+    };
+  })(i);
+}
+
+// 现代方法：直接用 let 声明块级作用域
+for (let i = 0; i < 5; i++) {
+  document.getElementById(`btn${i}`).onclick = function() {
+    console.log(`按钮 ${i} 被点击`);
+  };
+}
+```
+
+4. 高阶函数与函数工厂:性能优化、单例模式、缓存计算结果
+
+```js
+// once：确保函数只执行一次
+function once(fn) {
+  let executed = false;
+  return function(...args) {
+    if (!executed) {
+      executed = true;
+      return fn.apply(this, args);
+    }
+  };
+}
+
+const init = once(() => console.log('初始化完成'));
+init(); // 输出
+init(); // 无输出
+
+// memoize：缓存计算结果
+function memoize(fn) {
+  const cache = {};
+  return function(arg) {
+    if (cache[arg] === undefined) {
+      cache[arg] = fn(arg);
+    }
+    return cache[arg];
+  };
+}
+
+const fib = memoize(n => n <= 1 ? n : fib(n-1) + fib(n-2));
+console.log(fib(40)); // 大幅提升性能
+```
+
+5. 迭代器与生成器
+
+```js
+function createRange(start, end) {
+  let current = start;
+  return {
+    next() {
+      if (current <= end) {
+        return { value: current++, done: false };
+      } else {
+        return { done: true };
+      }
+    }
+  };
+}
+
+const range = createRange(3, 5);
+console.log(range.next().value); // 3
+console.log(range.next().value); // 4
+console.log(range.next().value); // 5
+console.log(range.next().done);  // true
+```
