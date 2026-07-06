@@ -299,7 +299,7 @@ Grid
 
 ---
 
-### 圣杯布局（Holy Grail Layout）
+### 六、圣杯布局（Holy Grail Layout）
 
 
 在 Flex 和 Grid 出现之前，CSS 一直缺少一种优雅的三栏布局方案。
@@ -486,7 +486,7 @@ position:relative;
 
 ---
 
-### 双飞翼布局（Double Wing Layout）
+### 七、双飞翼布局（Double Wing Layout）
 
 双飞翼布局是阿里提出的经典方案。
 
@@ -659,4 +659,5 @@ HTML 从上到下解析。
 - **圣杯布局** 通过父元素 `padding` 预留空间，再利用 `relative` 将左右栏移动到 `padding` 区域。
 - **双飞翼布局** 将预留空间放到中间内容（wrapper）的 `margin` 中，因此无需父元素 `padding` 和 `relative` 定位，布局更加稳定，但会增加一层 DOM。
 - **现代项目几乎都会优先选择 Flex 或 Grid**，圣杯布局和双飞翼布局更多用于理解 CSS 布局演进过程以及应对前端面试。
+- 圣杯布局和双飞翼布局都利用了margin-left负值往左移动原理，双飞翼的外层设计，不需要再额外定位操作。
 
